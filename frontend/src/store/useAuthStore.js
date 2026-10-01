@@ -135,7 +135,10 @@ export const useAuthStore = create((set,get) => ({
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const requestUrl = error.config?.url || "";
+    const isAuthRequest = /\/auth\//.test(requestUrl);
+
+    if (error.response?.status === 401 && !isAuthRequest) {
       const { clearAuthSession } = useAuthStore.getState();
       clearAuthSession();
     }
