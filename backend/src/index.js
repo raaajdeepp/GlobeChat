@@ -39,7 +39,14 @@ app.use("/api/messages", messageRoutes);
 //   });
 // }
 
-server.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-  connectDB();
-});
+const startServer = async () => {
+  try{
+    await connectDB();
+    server.listen(PORT, () => {
+      console.log(`Server is running on port ${PORT}`);
+    });
+  } catch (error){
+    console.error(`Server is running on port ${PORT}`);
+    process.exit(1);
+  } 
+}
