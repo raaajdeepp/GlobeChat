@@ -13,14 +13,36 @@ import { app, server } from "./lib/socket.js";
 dotenv.config();
 
 const PORT = process.env.PORT || 5001;
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "http://0.0.0.0:5173",
+  process.env.CLIENT_URL,
+].filter(Boolean);
 
-// const __dirname = path.resolve();
+const isAllowedOrigin = (origin) => {
+  if (!origin) return true;
+
+  if (allowedOrigins.includes(origin)) return true;
+
+  const isLocalNetworkOrigin = /^http:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3})(?::\d+)?$/.test(origin);
+  const isVercelFrontend = /^https:\/\/.*\.vercel\.app$/.test(origin);
+
+  return isLocalNetworkOrigin || isVercelFrontend;
+};
 
 app.use(cookieParser());
 app.use(express.json({limit:"20mb"}));
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    origin: (origin, callback) => {
+      if (!origin || isAllowedOrigin(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error(`CORS blocked for origin: ${origin}`));
+    },
     credentials: true,
   })
 );
