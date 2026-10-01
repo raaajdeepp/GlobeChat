@@ -8,12 +8,20 @@ const Sidebar = () => {
   const { getUsers, users, selectedUser, setSelectedUser, isUsersLoading } =
     useChatStore();
 
-  const { onlineUsers } = useAuthStore();
+  const { onlineUsers, authUser } = useAuthStore();
   const [showOnlineOnly, setShowOnlineOnly] = useState(false);
 
   useEffect(() => {
+    if (!authUser) return;
+
     getUsers();
-  }, [getUsers]);
+
+    const intervalId = setInterval(() => {
+      getUsers();
+    }, 2000);
+
+    return () => clearInterval(intervalId);
+  }, [authUser, getUsers]);
 
   const filteredUsers = showOnlineOnly
     ? users.filter((user) => onlineUsers.includes(user._id))

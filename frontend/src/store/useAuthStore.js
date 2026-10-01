@@ -16,6 +16,11 @@ export const useAuthStore = create((set,get) => ({
   onlineUsers: [],
   socket: null,
 
+  clearAuthSession: () => {
+    set({ authUser: null, onlineUsers: [], isCheckingAuth: false });
+    get().disconnectSocket();
+  },
+
   checkAuth: async () => {
     try {
       const res = await axiosInstance.get("/auth/check");
@@ -23,7 +28,7 @@ export const useAuthStore = create((set,get) => ({
       get().connectSocket();
     } catch (error) {
       console.log("Error in checkAuth", error);
-      set({ authUser: null });
+      get().clearAuthSession();
     } finally {
       set({ isCheckingAuth: false });
     }
@@ -68,13 +73,13 @@ export const useAuthStore = create((set,get) => ({
   logout: async () => {
     try {
       await axiosInstance.post("/auth/logout");
-      set({ authUser: null });
+      get().clearAuthSession();
       toast.success("Logged out successfully",{
         id: "logout-success"
       });
-      get().disconnectSocket();
     } catch (error) {
-      toast.error(error.response.data.message,{
+      get().clearAuthSession();
+      toast.error(error.response?.data?.message || "Logout failed",{
         id: "logout-fail"
       });
     }
@@ -119,8 +124,22 @@ export const useAuthStore = create((set,get) => ({
   },
 
   disconnectSocket: async () => {
-    if(get().socket?.connected){
-      get().socket.disconnect();
+    const currentSocket = get().socket;
+    if(currentSocket?.connected){
+      currentSocket.disconnect();
     }
+    set({ socket: null });
   },
 }));
+
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      const { clearAuthSession } = useAuthStore.getState();
+      clearAuthSession();
+    }
+
+    return Promise.reject(error);
+  }
+);

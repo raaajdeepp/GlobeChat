@@ -17,7 +17,12 @@ export const useChatStore = create((set, get) => ({
       set({ users: res.data });
     } catch (error) {
       console.log("Error in getUsers", error);
-      toast.error(error.response.data.message);
+
+      if (error.response?.status === 401) {
+        return;
+      }
+
+      toast.error(error.response?.data?.message || "Unable to load contacts");
     } finally {
       set({ isUsersLoading: false });
     }
@@ -29,7 +34,11 @@ export const useChatStore = create((set, get) => ({
       const res = await axiosInstance.get(`/messages/${userId}`);
       set({ messages: res.data });
     } catch (error) {
-      toast.error(error.response.data.message);
+      if (error.response?.status === 401) {
+        return;
+      }
+
+      toast.error(error.response?.data?.message || "Unable to load messages");
     } finally {
       set({ isMessagesLoading: false });
     }
@@ -43,7 +52,11 @@ export const useChatStore = create((set, get) => ({
       );
       set({ messages: [...messages, res.data] });
     } catch (error) {
-      toast.error(error.response.data.message);
+      if (error.response?.status === 401) {
+        return;
+      }
+
+      toast.error(error.response?.data?.message || "Unable to send message");
     }
   },
 
